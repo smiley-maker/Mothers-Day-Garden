@@ -1,35 +1,72 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState, useRef } from 'react';
+import './App.css';
+import background from './assets/garden-bg.png';
+import Sun from './components/Sun';
+import Birdhouse from './components/Birdhouse';
+import Bench from './components/Bench';
+import WateringCan from './components/WateringCan';
+import Toolshed from './components/Toolshed';
+import GardenFlowers from './components/GardenFlowers';
+import StonePath from './components/StonePath';
+import Bird from './components/Bird';
+import GardenPlannerModal from './components/GardenPlannerModal';
+import GardenExportArea from './components/GardenExportArea';
+import { toPng } from 'html-to-image';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [plannerOpen, setPlannerOpen] = useState(false);
+  const [exportData, setExportData] = useState(null); // { bed, gridSize, notes }
+  const exportRef = useRef(null);
+
+  // Download handler for modal
+  const handleModalDownload = (bed, gridSize, notes) => {
+    setExportData({ bed, gridSize, notes });
+    setTimeout(async () => {
+      if (!exportRef.current) return;
+      try {
+        const dataUrl = await toPng(exportRef.current, { cacheBust: true });
+        const link = document.createElement('a');
+        link.download = 'my-garden.png';
+        link.href = dataUrl;
+        link.click();
+      } catch (err) {
+        alert('Sorry, there was a problem exporting your garden.');
+      }
+      setExportData(null); // Clean up
+    }, 200);
+  };
 
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      {/* Hidden export area for download */}
+      <div style={{ position: 'absolute', left: -9999, top: 0, pointerEvents: 'none' }}>
+        {exportData && (
+          <div ref={exportRef}>
+            <GardenExportArea {...exportData} />
+          </div>
+        )}
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+      <div
+        style={{
+          position: 'relative',
+          width: '100vw',
+          height: '100vh',
+          overflow: 'hidden',
+          background: `url(${background}) bottom/cover no-repeat`,
+        }}
+      >
+        <Sun />
+        <Birdhouse />
+        <StonePath />
+        <Bench />
+        <Bird />
+        <WateringCan onClick={() => setPlannerOpen(true)} />
+        <Toolshed />
+        <GardenFlowers />
+        <GardenPlannerModal open={plannerOpen} onClose={() => setPlannerOpen(false)} onDownload={handleModalDownload} />
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
